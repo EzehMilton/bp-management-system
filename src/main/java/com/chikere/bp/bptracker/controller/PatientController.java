@@ -17,11 +17,30 @@ import java.util.UUID;
 @RequestMapping("v1/api/patient")
 @RequiredArgsConstructor
 public class PatientController {
+    // TODO Review this controller and remove things that are not needed
     private final PatientService patientService;
     private final PatientMapper patientMapper;
 
     @PostMapping
     public ResponseEntity<PatientDTO> addPatient(@RequestBody NewPatientDTO newPatientDTO) {
+
+        /**
+         * FLOW
+         *
+         * Request Body to DTO: The incoming JSON payload from the request body is deserialized into a NewPatientDTO object using the @RequestBody annotation.
+         *
+         *
+         * DTO to Entity: The NewPatientDTO is mapped to a Patient entity using patientMapper.toEntity(newPatientDTO).
+         *
+         *
+         * Entity Saved: The Patient entity is persisted to the database using patientService.createPatient(...).
+         *
+         *
+         * Entity to DTO: The saved Patient entity is converted back to a PatientDTO using patientMapper.toDto(saved).
+         *
+         *
+         * Response: A 201 Created response is returned with the PatientDTO in the body and a Location header pointing to the resource's URI.
+         */
 
         // 1. Convert DTO → JPA entity and Persist the new patient
         Patient saved = patientService.createPatient(patientMapper.toEntity(newPatientDTO));

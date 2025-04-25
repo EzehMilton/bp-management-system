@@ -13,10 +13,13 @@ public class ReadingService {
     private final ReadingRepository readingRepository;
 
     public Reading create(Reading r) {
+        // This will add the reading to the DB. Once added, it may be used by the Risk service for analysis.
+
         return readingRepository.save(r);
     }
 
     public Reading update(UUID id, Reading r) {
+        // This should reset the readings if a mistake was made
         r.setId(id);
         return readingRepository.save(r);
     }

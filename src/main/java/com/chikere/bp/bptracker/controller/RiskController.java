@@ -1,12 +1,10 @@
 package com.chikere.bp.bptracker.controller;
 
+import com.chikere.bp.bptracker.exception.EntityNotFoundException;
 import com.chikere.bp.bptracker.service.RiskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -16,14 +14,43 @@ import java.util.UUID;
 public class RiskController {
     private final RiskService riskService;
 
-    @GetMapping("/{patientId}")
+    /**
+     * Handles the immediate capture and assessment of a patient's blood pressure reading.
+     *
+     * @param patientId The unique identifier of the patient (UUID).
+     * @return A ResponseEntity containing:
+     *         - The risk level as a string ("NORMAL" if no risk level is determined).
+     *         - A bad request response with an error message if the patient is not found or no readings exist.
+     * @throws EntityNotFoundException If the patient with the given ID does not exist or no readings are found.
+     */
+    @PostMapping("/{patientId}/immediate")
+    public ResponseEntity<String> captureAndAssessImmediateReading(
+            @PathVariable UUID patientId) {
+        try {
+            String riskLevel = riskService.captureAndAssessImmediateReading(patientId);
+            return ResponseEntity.ok(riskLevel != null ? riskLevel : "NORMAL");
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Performs an AI-based risk analysis for a patient.
+     *
+     * @param patientId The unique identifier of the patient (UUID).
+     * @return A ResponseEntity containing:
+     *         - The risk level as a string if the analysis is successful.
+     *         - A bad request response with an error message if the patient is not found.
+     * @throws EntityNotFoundException If the patient with the given ID does not exist.
+     */
+    @GetMapping("/{patientId}/analyzeAI")
     public ResponseEntity<String> riskCheckWithAi(@PathVariable UUID patientId) {
         try {
             String riskLevelString = riskService.accessRiskWithAI(patientId);
             RiskService.RiskLevel level = RiskService.RiskLevel.valueOf(riskLevelString);
             return ResponseEntity.ok(level.name());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Invalid risk level: " + e.getMessage());
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }
