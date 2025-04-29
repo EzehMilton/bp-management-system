@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: layout(~{::pageTitle}, ~{::content}, ~{::scripts})">
+
+<!-- 1) Page title fragment -->
+<th:block th:fragment="pageTitle">Reading Details</th:block>
+
+<!-- 2) Main content fragment -->
+<th:block th:fragment="content">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Blood Pressure Reading</h1>
+            <h4 class="text-muted" th:text="${#strings.substring(reading.timestamp, 0, 19)}">2023-01-01 12:00:00</h4>
+        </div>
+        <div class="col-md-4 text-end">
+            <a th:href="@{/patients/{id}(id=${reading.patientId})}" class="btn btn-primary">View Patient</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4"
+                 th:classappend="${reading.systolic >= 140 || reading.diastolic >= 90} ? 'border-danger' :
+                             (${reading.systolic >= 120 || reading.diastolic >= 80} ? 'border-warning' : 'border-success')">
+                <div class="card-header"
+                     th:classappend="${reading.systolic >= 140 || reading.diastolic >= 90} ? 'bg-danger text-white' :
+                               (${reading.systolic >= 120 || reading.diastolic >= 80} ? 'bg-warning' : 'bg-success text-white')">
+                    <h5 class="mb-0">Blood Pressure</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h2 class="display-4" th:text="${reading.systolic}">120</h2>
+                            <p class="text-muted">Systolic (mmHg)</p>
+                        </div>
+                        <div class="col-6">
+                            <h2 class="display-4" th:text="${reading.diastolic}">80</h2>
+                            <p class="text-muted">Diastolic (mmHg)</p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div th:if="${reading.systolic < 120 && reading.diastolic < 80}" class="alert alert-success">
+                            <strong>Normal</strong> – Blood pressure is within normal range.
+                        </div>
+                        <div th:if="${(reading.systolic >= 120 && reading.systolic < 140) || (reading.diastolic >= 80 && reading.diastolic < 90)}" class="alert alert-warning">
+                            <strong>Elevated</strong> – Blood pressure is slightly higher than normal.
+                        </div>
+                        <div th:if="${reading.systolic >= 140 || reading.diastolic >= 90}" class="alert alert-danger">
+                            <strong>High</strong> – Blood pressure is higher than normal. Medical attention may be needed.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Heart Rate</h5>
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="display-4" th:text="${reading.heartRate}">72</h2>
+                    <p class="text-muted">Beats Per Minute (BPM)</p>
+
+                    <div class="mt-3">
+                        <div th:if="${reading.heartRate < 60}" class="alert alert-warning">
+                            <strong>Low</strong> – Heart rate is lower than normal.
+                        </div>
+                        <div th:if="${reading.heartRate >= 60 && reading.heartRate <= 100}" class="alert alert-success">
+                            <strong>Normal</strong> – Heart rate is within normal range.
+                        </div>
+                        <div th:if="${reading.heartRate > 100}" class="alert alert-warning">
+                            <strong>Elevated</strong> – Heart rate is higher than normal.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Reading Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th style="width: 30%">Date & Time:</th>
+                                    <td th:text="${#strings.substring(reading.timestamp, 0, 19)}">2023-01-01 12:00:00</td>
+                                </tr>
+                                <tr>
+                                    <th>Body Position:</th>
+                                    <td th:text="${reading.bodyPosition}">Sitting</td>
+                                </tr>
+                                <tr>
+                                    <th>Arm:</th>
+                                    <td th:text="${reading.arm}">Left</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th style="width: 30%">Device ID:</th>
+                                    <td th:text="${reading.deviceId ?: 'Not specified'}">Device123</td>
+                                </tr>
+                                <tr>
+                                    <th>Notes:</th>
+                                    <td th:text="${reading.notes ?: 'No notes'}">Reading notes</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 text-end">
+        <a href="/readings" class="btn btn-secondary">Back to Readings</a>
+    </div>
+</th:block>
+
+<!-- 3) Page-specific scripts fragment -->
+<th:block th:fragment="scripts">
+    <!-- Reading view specific scripts can go here -->
+</th:block>
+
+</html>

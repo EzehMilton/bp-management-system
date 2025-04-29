@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: layout(~{::pageTitle}, ~{::content}, ~{::scripts})">
+
+<!-- 1) Page title fragment -->
+<th:block th:fragment="pageTitle">Patient Details</th:block>
+
+<!-- 2) Main content fragment -->
+<th:block th:fragment="content">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 th:text="${patient.fullName}">Patient Name</h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group" role="group">
+                <a th:href="@{/patients/{id}/readings/new(id=${patient.id})}"
+                   class="btn btn-success">Add Reading</a>
+                <a th:href="@{/patients/{id}/risk(id=${patient.id})}"
+                   class="btn btn-warning">Risk Assessment</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Patient Information</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th style="width: 30%">Full Name:</th>
+                            <td th:text="${patient.fullName}">John Doe</td>
+                        </tr>
+                        <tr>
+                            <th>Gender:</th>
+                            <td th:text="${patient.gender}">Male</td>
+                        </tr>
+                        <tr>
+                            <th>Birth Date:</th>
+                            <td th:text="${#strings.substring(patient.birthDate, 0, 10)}">1980-01-01</td>
+                        </tr>
+                        <tr>
+                            <th>Address:</th>
+                            <td th:text="${patient.address}">123 Main St</td>
+                        </tr>
+                        <tr>
+                            <th>Phone:</th>
+                            <td th:text="${patient.phone}">555-1234</td>
+                        </tr>
+                        <tr>
+                            <th>Known Conditions:</th>
+                            <td th:text="${patient.knownConditions}">Hypertension</td>
+                        </tr>
+                        <tr>
+                            <th>Notes:</th>
+                            <td th:text="${patient.notes}">Patient notes</td>
+                        </tr>
+                        <tr>
+                            <th>Registered:</th>
+                            <td th:text="${#strings.substring(patient.registeredAt, 0, 10)}">2023-01-01</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Emergency Contact</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th style="width: 30%">Name:</th>
+                            <td th:text="${patient.kinName}">Jane Doe</td>
+                        </tr>
+                        <tr>
+                            <th>Phone:</th>
+                            <td th:text="${patient.kinTelNumber}">555-5678</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-md-6">
+
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Latest Reading</h5>
+                    <a th:href="@{/patients/{id}/readings/new(id=${patient.id})}"
+                       class="btn btn-sm btn-success">Add New</a>
+                </div>
+                <div class="card-body">
+                    <div th:if="${latestReading == null}" class="alert alert-info">
+                        No readings recorded yet.
+                        <a th:href="@{/patients/{id}/readings/new(id=${patient.id})}"
+                           class="alert-link">Add the first reading</a>.
+                    </div>
+                    <div th:unless="${latestReading == null}"
+                         class="card"
+                         th:classappend="
+                   ${latestReading.systolic >= 140 || latestReading.diastolic >= 90} ? 'reading-high' :
+                   (${latestReading.systolic >= 120 || latestReading.diastolic >= 80} ? 'reading-elevated' : 'reading-normal')
+                 ">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <span th:text="${latestReading.systolic}">120</span>/
+                                <span th:text="${latestReading.diastolic}">80</span> mmHg
+                                <span class="badge bg-secondary float-end"
+                                      th:text="${#strings.substring(latestReading.timestamp, 0, 10)}">2023-01-01</span>
+                            </h5>
+                            <p class="card-text">
+                                Heart Rate: <strong th:text="${latestReading.heartRate}">72</strong> bpm<br>
+                                Position: <span th:text="${latestReading.bodyPosition}">Sitting</span><br>
+                                Arm: <span th:text="${latestReading.arm}">Left</span>
+                            </p>
+                            <a th:href="@{/readings/{id}(id=${latestReading.id})}"
+                               class="btn btn-sm btn-outline-primary">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Readings</h5>
+                    <a th:href="@{/patients/{id}/readings/new(id=${patient.id})}"
+                       class="btn btn-sm btn-success">Add New</a>
+                </div>
+                <div class="card-body">
+                    <div th:if="${#lists.isEmpty(readings)}" class="alert alert-info">
+                        No readings recorded yet.
+                    </div>
+                    <div th:unless="${#lists.isEmpty(readings)}" class="list-group">
+                        <a th:each="reading : ${readings}"
+                           th:href="@{/readings/{id}(id=${reading.id})}"
+                           class="list-group-item list-group-item-action"
+                           th:classappend="
+                   ${reading.systolic >= 140 || reading.diastolic >= 90} ? 'reading-high' :
+                   (${reading.systolic >= 120 || reading.diastolic >= 80} ? 'reading-elevated' : 'reading-normal')
+                 ">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">
+                                    <span th:text="${reading.systolic}">120</span>/
+                                    <span th:text="${reading.diastolic}">80</span> mmHg
+                                </h5>
+                                <small th:text="${#strings.substring(reading.timestamp, 0, 16)}">
+                                    2023-01-01 12:00
+                                </small>
+                            </div>
+                            <p class="mb-1">
+                                Heart Rate: <strong th:text="${reading.heartRate}">72</strong> bpm |
+                                Position: <span th:text="${reading.bodyPosition}">Sitting</span> |
+                                Arm: <span th:text="${reading.arm}">Left</span>
+                            </p>
+                            <small th:if="${reading.notes}" th:text="${reading.notes}">
+                                Notes about the reading
+                            </small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</th:block>
+
+<!-- 3) Page-specific scripts fragment -->
+<th:block th:fragment="scripts">
+    <!-- Patient view specific scripts can go here -->
+</th:block>
+
+</html>

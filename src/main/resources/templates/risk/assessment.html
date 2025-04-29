@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: layout(~{::pageTitle}, ~{::content}, ~{::scripts})">
+
+<!-- 1) Page title fragment -->
+<th:block th:fragment="pageTitle">Risk Assessment</th:block>
+
+<!-- 2) Main content fragment -->
+<th:block th:fragment="content">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Risk Assessment</h1>
+            <p class="lead">
+                Patient: <strong th:text="${patient.fullName}">John Doe</strong>
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a th:href="@{/patients/{id}(id=${patient.id})}" class="btn btn-primary">Back to Patient</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Latest Reading</h5>
+                </div>
+                <div class="card-body">
+                    <div th:if="${latestReading == null}" class="alert alert-info">
+                        No readings recorded yet.
+                        <a th:href="@{/patients/{id}/readings/new(id=${patient.id})}" class="alert-link">Add the first reading</a>.
+                    </div>
+                    <div th:unless="${latestReading == null}"
+                         class="card"
+                         th:classappend="${latestReading.systolic >= 140 || latestReading.diastolic >= 90} ? 'reading-high' :
+                                (${latestReading.systolic >= 120 || latestReading.diastolic >= 80} ? 'reading-elevated' : 'reading-normal')">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <span th:text="${latestReading.systolic}">120</span>/<span th:text="${latestReading.diastolic}">80</span> mmHg
+                                <span class="badge bg-secondary float-end" th:text="${#strings.substring(latestReading.timestamp, 0, 10)}">2023-01-01</span>
+                            </h5>
+                            <p class="card-text">
+                                Heart Rate: <strong th:text="${latestReading.heartRate}">72</strong> bpm<br>
+                                Position: <span th:text="${latestReading.bodyPosition}">Sitting</span><br>
+                                Arm: <span th:text="${latestReading.arm}">Left</span>
+                            </p>
+                            <a th:href="@{/readings/{id}(id=${latestReading.id})}" class="btn btn-sm btn-outline-primary">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Immediate Risk Assessment</h5>
+                </div>
+                <div class="card-body">
+                    <p>Capture and assess the patient's current blood pressure reading.</p>
+                    <form th:action="@{/patients/{id}/risk/immediate(id=${patient.id})}" method="post">
+                        <button type="submit" class="btn btn-warning">Capture & Assess Now</button>
+                    </form>
+
+                    <div th:if="${immediateRisk}" class="alert alert-info mt-3">
+                        <h5>Immediate Risk Assessment Result:</h5>
+                        <p th:text="${immediateRisk}">Risk level</p>
+                    </div>
+
+                    <div th:if="${immediateRiskError}" class="alert alert-danger mt-3">
+                        <h5>Error:</h5>
+                        <p th:text="${immediateRiskError}">Error message</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">AI-Powered Risk Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <div th:if="${aiRiskError}" class="alert alert-danger">
+                        <h5>Error:</h5>
+                        <p th:text="${aiRiskError}">Error message</p>
+                    </div>
+
+                    <div th:if="${aiRisk}" class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">AI Risk Assessment</h5>
+
+                            <div th:if="${aiRisk == 'LOW'}" class="alert alert-success">
+                                <strong>Low Risk</strong> – Blood pressure indicates a low risk level.
+                            </div>
+                            <div th:if="${aiRisk == 'MODERATE'}" class="alert alert-warning">
+                                <strong>Moderate Risk</strong> – Monitor patient regularly.
+                            </div>
+                            <div th:if="${aiRisk == 'HIGH'}" class="alert alert-danger">
+                                <strong>High Risk</strong> – Medical attention recommended.
+                            </div>
+                            <div th:if="${aiRisk == 'VERY_HIGH'}" class="alert alert-danger">
+                                <strong>Very High Risk</strong> – Immediate medical attention required.
+                            </div>
+                            <div th:if="${!#strings.equals(aiRisk, 'LOW') && !#strings.equals(aiRisk, 'MODERATE') && !#strings.equals(aiRisk, 'HIGH') && !#strings.equals(aiRisk, 'VERY_HIGH')}">
+                                <p th:text="${aiRisk}">Risk assessment</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div th:unless="${aiRisk || aiRiskError}" class="text-center py-4">
+                        <p>Click the button below to analyze the patient's risk based on their blood pressure history.</p>
+                        <a th:href="@{/patients/{id}/risk(id=${patient.id}, analyze=true)}" class="btn btn-primary">Analyze with AI</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Risk Factors</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Known Conditions:</h6>
+                    <p th:text="${patient.knownConditions ?: 'None recorded'}">Hypertension</p>
+
+                    <h6>Common Risk Factors:</h6>
+                    <ul>
+                        <li>Age (65+)</li>
+                        <li>Family history of high blood pressure</li>
+                        <li>Obesity</li>
+                        <li>Inactivity</li>
+                        <li>High-sodium diet</li>
+                        <li>Low-potassium diet</li>
+                        <li>Alcohol use</li>
+                        <li>Chronic stress</li>
+                        <li>Other chronic illnesses</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<!-- 3) Page-specific scripts fragment -->
+<th:block th:fragment="scripts">
+    <!-- Risk assessment specific scripts can go here -->
+</th:block>
+
+</html>

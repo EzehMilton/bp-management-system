@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: layout(~{::pageTitle}, ~{::content}, ~{::scripts})">
+
+<!-- 1) Page title fragment -->
+<th:block th:fragment="pageTitle">Add New Reading</th:block>
+
+<!-- 2) Main content fragment -->
+<th:block th:fragment="content">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h1>Add New Blood Pressure Reading</h1>
+            <p th:if="${patient != null}" class="lead">
+                Patient: <strong th:text="${patient.fullName}">John Doe</strong>
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Reading Information</h5>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/readings/new}"
+                  th:object="${reading}"
+                  method="post"
+                  class="needs-validation"
+                  novalidate>
+
+                <input type="hidden" th:field="*{patientId}" th:if="${patient != null}"/>
+
+                <div class="row mb-3" th:if="${patient == null}">
+                    <div class="col-md-12">
+                        <label for="patientId" class="form-label">Patient <span class="text-danger">*</span></label>
+                        <select class="form-select" id="patientId" th:field="*{patientId}" required>
+                            <option value="">Select patient</option>
+                            <option th:each="patientOption : ${patients}"
+                                    th:value="${patientOption.id}"
+                                    th:text="${patientOption.fullName}">
+                                Patient Name
+                            </option>
+                        </select>
+                        <div class="invalid-feedback">Please select a patient.</div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="systolic" class="form-label">Systolic (mmHg) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="systolic"
+                               th:field="*{systolic}" min="60" max="250" required>
+                        <div class="invalid-feedback">Please enter a valid systolic value (60–250 mmHg).</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="diastolic" class="form-label">Diastolic (mmHg) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="diastolic"
+                               th:field="*{diastolic}" min="40" max="150" required>
+                        <div class="invalid-feedback">Please enter a valid diastolic value (40–150 mmHg).</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="heartRate" class="form-label">Heart Rate (BPM) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="heartRate"
+                               th:field="*{heartRate}" min="30" max="220" required>
+                        <div class="invalid-feedback">Please enter a valid heart rate (30–220 BPM).</div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="bodyPosition" class="form-label">Body Position <span class="text-danger">*</span></label>
+                        <select class="form-select" id="bodyPosition" th:field="*{bodyPosition}" required>
+                            <option value="">Select position</option>
+                            <option th:each="position : ${bodyPositions}"
+                                    th:value="${position}"
+                                    th:text="${position}">Position</option>
+                        </select>
+                        <div class="invalid-feedback">Please select a body position.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="arm" class="form-label">Arm <span class="text-danger">*</span></label>
+                        <select class="form-select" id="arm" th:field="*{arm}" required>
+                            <option value="">Select arm</option>
+                            <option th:each="armOption : ${arms}"
+                                    th:value="${armOption}"
+                                    th:text="${armOption}">Arm</option>
+                        </select>
+                        <div class="invalid-feedback">Please select an arm.</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="deviceId" class="form-label">Device ID</label>
+                    <input type="text" class="form-control" id="deviceId" th:field="*{deviceId}">
+                </div>
+
+                <div class="mb-3">
+                    <label for="notes" class="form-label">Notes</label>
+                    <textarea class="form-control" id="notes" th:field="*{notes}" rows="3"></textarea>
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a th:href="${patient != null ? '/patients/' + patient.id : '/readings'}"
+                       class="btn btn-secondary me-md-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Reading</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</th:block>
+
+<!-- 3) Page-specific scripts fragment -->
+<th:block th:fragment="scripts">
+    <script>
+        // Bootstrap form validation
+        (function () {
+            'use strict';
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
+    </script>
+</th:block>
+
+</html>

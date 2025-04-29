@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: layout(~{::pageTitle}, ~{::content}, ~{::scripts})">
+
+<!-- 1) Page title fragment (used in <title>) -->
+<th:block th:fragment="pageTitle">Dashboard</th:block>
+
+<!-- 2) Main content fragment (will be wrapped in layout’s container) -->
+<th:block th:fragment="content">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-speedometer2 text-primary me-3" style="font-size: 2.5rem;"></i>
+                <h1 class="mb-0">Blood Pressure Tracker Dashboard</h1>
+            </div>
+            <hr class="my-4">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-people-fill text-primary me-2"></i>Patients</h5>
+                    <a href="/patients/new" class="btn btn-primary btn-sm">
+                        <i class="bi bi-person-plus-fill me-1"></i>Add New
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div th:if="${#lists.isEmpty(patients)}" class="alert alert-info">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        No patients found. Add your first patient to get started.
+                    </div>
+                    <div th:unless="${#lists.isEmpty(patients)}">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="dashboard-stat me-3 px-4 py-2 rounded-pill bg-light">
+                                <h2 class="mb-0" th:text="${#lists.size(patients)}">0</h2>
+                                <p class="mb-0 small">Total Patients</p>
+                            </div>
+                        </div>
+                        <div class="list-group shadow-sm">
+                            <a th:each="patient : ${patients}"
+                               th:href="@{/patients/{id}(id=${patient.id})}"
+                               class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">
+                                        <i class="bi bi-person-circle me-2 text-primary"></i>
+                                        <span th:text="${patient.fullName}">Patient Name</span>
+                                    </h5>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar3 me-1"></i>
+                                        <span th:text="${#strings.substring(patient.registeredAt, 0, 10)}">Date</span>
+                                    </small>
+                                </div>
+                                <p class="mb-1 text-muted" th:if="${patient.knownConditions}">
+                                    <i class="bi bi-clipboard2-pulse me-1"></i>
+                                    <span th:text="${patient.knownConditions}">Known conditions</span>
+                                </p>
+                            </a>
+                        </div>
+                        <div class="mt-3">
+                            <a href="/patients" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-arrow-right-circle me-1"></i>View All Patients
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-lightning-fill text-warning me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-3">
+                        <a href="/patients/new" class="btn btn-primary">
+                            <i class="bi bi-person-plus-fill me-2"></i>Add New Patient
+                        </a>
+                        <a href="/readings/new" class="btn btn-success">
+                            <i class="bi bi-plus-circle-fill me-2"></i>Record Blood Pressure
+                        </a>
+                        <a href="/patients" class="btn btn-info">
+                            <i class="bi bi-people-fill me-2"></i>View All Patients
+                        </a>
+                        <a href="/readings" class="btn btn-secondary">
+                            <i class="bi bi-graph-up me-2"></i>View All Readings
+                        </a>
+                        <a href="/risk/assessment" class="btn btn-danger">
+                            <i class="bi bi-shield-fill-check me-2"></i>Risk Assessment
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle-fill text-info me-2"></i>About Blood Pressure Tracker</h5>
+                </div>
+                <div class="card-body">
+                    <p>This application helps you track and analyze blood pressure readings over time.</p>
+                    <p class="fw-bold">Features include:</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item bg-transparent">
+                            <i class="bi bi-people text-primary me-2"></i>Patient management
+                        </li>
+                        <li class="list-group-item bg-transparent">
+                            <i class="bi bi-graph-up text-success me-2"></i>Blood pressure reading tracking
+                        </li>
+                        <li class="list-group-item bg-transparent">
+                            <i class="bi bi-shield-fill text-danger me-2"></i>Risk assessment
+                        </li>
+                        <li class="list-group-item bg-transparent">
+                            <i class="bi bi-robot text-info me-2"></i>AI-powered analysis
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<!-- 3) Page-specific scripts -->
+<th:block th:fragment="scripts">
+    <!-- Dashboard-specific scripts can go here -->
+</th:block>
+</html>
