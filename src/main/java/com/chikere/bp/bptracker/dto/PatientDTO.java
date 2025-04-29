@@ -16,5 +16,6 @@ public class PatientDTO {
     private String kinName;
     private String kinTelNumber;
     private String knownConditions;
+    private String notes;
     private String registeredAt;   // As ISO datetime string
 }

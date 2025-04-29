@@ -13,4 +13,5 @@ public class NewPatientDTO {
     private String kinName;
     private String kinTelNumber;
     private String knownConditions;
+    private String notes;
 }

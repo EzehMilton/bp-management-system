@@ -13,43 +13,32 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Controller for managing patient-related operations.
+ * Handles requests for creating, retrieving, searching, and managing patient records.
+ */
 @RestController
 @RequestMapping("v1/api/patient")
 @RequiredArgsConstructor
 public class PatientController {
-    // TODO Review this controller and remove things that are not needed
     private final PatientService patientService;
     private final PatientMapper patientMapper;
 
+    /**
+     * Create a new patient
+     */
     @PostMapping
     public ResponseEntity<PatientDTO> addPatient(@RequestBody NewPatientDTO newPatientDTO) {
-
-        /**
-         * FLOW
-         *
-         * Request Body to DTO: The incoming JSON payload from the request body is deserialized into a NewPatientDTO object using the @RequestBody annotation.
-         *
-         *
-         * DTO to Entity: The NewPatientDTO is mapped to a Patient entity using patientMapper.toEntity(newPatientDTO).
-         *
-         *
-         * Entity Saved: The Patient entity is persisted to the database using patientService.createPatient(...).
-         *
-         *
-         * Entity to DTO: The saved Patient entity is converted back to a PatientDTO using patientMapper.toDto(saved).
-         *
-         *
-         * Response: A 201 Created response is returned with the PatientDTO in the body and a Location header pointing to the resource's URI.
-         */
-
-        // 1. Convert DTO → JPA entity and Persist the new patient
+        // Convert DTO → JPA entity and persist the new patient
         Patient saved = patientService.createPatient(patientMapper.toEntity(newPatientDTO));
-        // 2. Convert saved entity → DTO (includes id, registeredAt, etc.)
+        // Convert saved entity → DTO and return 201 Created response
         PatientDTO resultDto = patientMapper.toDto(saved);
-        // 3. Return 201 Created with Location header and body
         return ResponseUtil.created(resultDto, saved.getId());
     }
 
+    /**
+     * Get all patients
+     */
     @GetMapping
     public ResponseEntity<List<PatientDTO>> getAllPatients() {
         List<PatientDTO> dtos = patientService.findAll().stream()
@@ -70,24 +59,21 @@ public class PatientController {
         return ResponseEntity.ok(dtos);
     }
 
-    /** Get one patient by ID **/
+    /**
+     * Get a patient by ID
+     * 
+     * @param id The patient ID
+     * @return The patient DTO or 404 if not found
+     */
     @GetMapping("/{id}")
-    public ResponseEntity<PatientDTO> getPatient(
-            @PathVariable("id") UUID id
-    ) {
-        // will throw if not found, triggering your global exception handler
-        Patient p = patientService.get(id);
-        return ResponseEntity.ok(patientMapper.toDto(p));
-    }
-
-    /** Get one patient by ID (returns null if not found) **/
-    @GetMapping("/find/{id}")
-    public ResponseEntity<PatientDTO> findPatientById(@PathVariable("id") UUID id) {
-        Patient patient = patientService.findById(id);
-        if (patient == null) {
+    public ResponseEntity<PatientDTO> getPatient(@PathVariable("id") UUID id) {
+        try {
+            // This will throw if not found, triggering the global exception handler
+            Patient patient = patientService.get(id);
+            return ResponseEntity.ok(patientMapper.toDto(patient));
+        } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(patientMapper.toDto(patient));
     }
 
 }

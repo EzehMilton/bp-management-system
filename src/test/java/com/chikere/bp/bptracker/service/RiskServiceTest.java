@@ -90,7 +90,7 @@ class RiskServiceTest {
     }
 
     @Test
-    void returnsNullWhenBloodPressureIsNormal() {
+    void returnsNormalWhenBloodPressureIsNormal() {
         when(patientRepository.findById(patientId)).thenReturn(Optional.of(patient));
 
         Reading reading = new Reading();
@@ -102,7 +102,7 @@ class RiskServiceTest {
 
         String result = riskService.captureAndAssessImmediateReading(patientId);
 
-        assertNull(result);
+        assertEquals("NORMAL", result);
         verify(patientRepository, times(1)).findById(patientId);
         verify(readingRepository, times(1)).findFirstByPatientOrderByTimestampDesc(patient);
     }

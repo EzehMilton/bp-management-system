@@ -5,15 +5,38 @@ import com.chikere.bp.bptracker.model.enums.Gender;
 import com.chikere.bp.bptracker.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 
+/**
+ * Initializes the application with sample data upon startup.
+ * <p>
+ * This component implements {@link CommandLineRunner} to execute code after
+ * the application context is loaded but before the application starts accepting
+ * requests. It's used here to populate the database with initial patient data
+ * for development and testing purposes.
+ * </p>
+ */
+
 @Component
+@Profile({"dev", "test"})
 @RequiredArgsConstructor
 public class DataLoader implements CommandLineRunner {
 
     private final PatientRepository patientRepository;
+    /**
+     * Executes the data loading process when the application starts.
+     * <p>
+     * This method clears any existing patient records and populates the database
+     * with five sample patient profiles. Each patient is created with a complete
+     * set of demographic information.
+     * </p>
+     *
+     * @param args Command line arguments passed to the application
+     * @throws Exception If an error occurs during data loading
+     */
 
     @Override
     public void run(String... args) throws Exception {
@@ -32,6 +55,23 @@ public class DataLoader implements CommandLineRunner {
         patientRepository.save(create("Anthony Ezeh",     Gender.MALE,  LocalDate.of(2002, 10, 20),
                                 "0752345678","Village E","0752300000","None"));
     }
+
+    /**
+     * Helper method to create a new Patient entity with the provided attributes.
+     * <p>
+     * This method simplifies the creation of Patient objects with consistent
+     * attribute assignment, improving code readability in the run method.
+     * </p>
+     *
+     * @param fullName       The patient's full name
+     * @param gender         The patient's gender
+     * @param dob            The patient's date of birth
+     * @param phone          The patient's phone number
+     * @param address        The patient's address
+     * @param kinPhone       Emergency contact phone number
+     * @param conditions     Known medical conditions
+     * @return               A new Patient entity with all attributes set
+     */
 
     private Patient create(String fullName, Gender gender, LocalDate dob,
                            String phone, String address, String kinPhone, String conditions) {

@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/risk")
+@RequestMapping("/v1/api/risk")
 public class RiskController {
     private final RiskService riskService;
 

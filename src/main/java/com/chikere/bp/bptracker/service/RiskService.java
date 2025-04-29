@@ -69,15 +69,15 @@ public class RiskService {
         }
         log.info("Recent blood pressure readings for patient with ID: {}: {}", patientId, readingsSummary);
 
-        // TODO - Remove hardcoded readings summary. It is used if we dont have enough readings.
-        // String readingsSummary = getHardCodedReadings();
-
         String prompt = buildPrompt(readingsSummary);
         log.info("Prompt sent to AI: {}", prompt);
 
         // Send prompt to LLM via Spring AI
         var bpResponse = chatClient.prompt(prompt).call().content();
-        // TODO Add response to the patients notes.
+
+        // Add response to the patient's notes by updating the patient entity
+        updatePatientNotes(patientId, bpResponse);
+
         log.debug("AI response: {}", bpResponse);
         // extract risk level from AI response and return it
         return extractRiskLevelFromAIResponse(bpResponse);
@@ -113,31 +113,42 @@ public class RiskService {
         return "UNKNOWN";
     }
 
+    /**
+     * Updates the patient's notes with the AI analysis response
+     */
+    private void updatePatientNotes(UUID patientId, String aiResponse) {
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found " + patientId));
+
+        // Format the note with timestamp
+        String timestamp = java.time.LocalDateTime.now().toString();
+        String formattedNote = String.format("[%s] AI Risk Analysis: %s", timestamp, aiResponse);
+
+        // Append to existing notes or create new notes
+        if (patient.getNotes() != null && !patient.getNotes().isEmpty()) {
+            patient.setNotes(patient.getNotes() + "\n\n" + formattedNote);
+        } else {
+            patient.setNotes(formattedNote);
+        }
+
+        // Save the updated patient
+        patientRepository.save(patient);
+        log.info("Updated notes for patient with ID: {}", patientId);
+    }
+
     private String buildPrompt(String readingsSummary) {
-        // TODO Extract prompt to seperate file/resource.
         return """
             Based on these 3 recent blood pressure readings (systolic/diastolic):
             %s
-            
+
             Please assess the patient's risk level and respond with one of the following options in CAPITAL LETTERS: NORMAL, AT_RISK, or CRITICAL.
-            
+
             First, explain your reasoning based on the readings.
             Then, clearly state the risk level on a new line, as one of the three options (NORMAL, AT_RISK, or CRITICAL).
-            
+
             Normal blood pressure is around 120/80 mmHg.
             Readings consistently higher than 130/80 may indicate AT_RISK.
             Readings significantly above 140/90 or very low may indicate CRITICAL.
             """.formatted(readingsSummary);
-    }
-
-    // TODO Remove in Production
-    private static String getHardCodedReadings() {
-        return """
-        Systolic: 120, Diastolic: 80, Time: 2023-10-01T10:00:00
-        Systolic: 130, Diastolic: 85, Time: 2023-10-02T10:00:00
-        Systolic: 140, Diastolic: 90, Time: 2023-10-03T10:00:00
-        Systolic: 150, Diastolic: 95, Time: 2023-10-04T10:00:00
-        Systolic: 160, Diastolic: 100, Time: 2023-10-05T10:00:00
-        """;
     }
 }
