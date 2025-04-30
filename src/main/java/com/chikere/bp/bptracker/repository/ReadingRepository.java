@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface ReadingRepository extends JpaRepository<Reading, UUID> {
     List<Reading> findTop3ByPatientOrderByTimestampDesc(Patient patient);
     Optional<Reading> findFirstByPatientOrderByTimestampDesc(Patient patient);
+    int countByPatient(Patient patient);
 }

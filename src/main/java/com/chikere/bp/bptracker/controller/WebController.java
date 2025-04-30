@@ -4,6 +4,7 @@ import com.chikere.bp.bptracker.dto.NewPatientDTO;
 import com.chikere.bp.bptracker.dto.NewReadingDto;
 import com.chikere.bp.bptracker.dto.PatientDTO;
 import com.chikere.bp.bptracker.dto.ReadingDto;
+import com.chikere.bp.bptracker.exception.EntityNotFoundException;
 import com.chikere.bp.bptracker.mapper.PatientMapper;
 import com.chikere.bp.bptracker.model.Patient;
 import com.chikere.bp.bptracker.model.enums.Arm;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.UUID;
 
@@ -55,7 +57,17 @@ public class WebController {
     public String viewPatient(@PathVariable UUID id, Model model) {
         model.addAttribute("patient", patientService.get(id));
         model.addAttribute("readings", readingService.getRecentReadingsForPatient(id));
-        model.addAttribute("latestReading", readingService.getLatestReadingForPatient(id));
+
+        try {
+            model.addAttribute("latestReading", readingService.getLatestReadingForPatient(id));
+        } catch (EntityNotFoundException e) {
+            // If no readings found, set latestReading to null
+            model.addAttribute("latestReading", null);
+        }
+
+        // Check if patient has at least 3 readings for risk assessment
+        model.addAttribute("hasEnoughReadingsForRisk", readingService.hasAtLeastThreeReadings(id));
+
         return "patients/view";
     }
 
@@ -76,7 +88,41 @@ public class WebController {
     public String createPatient(@ModelAttribute NewPatientDTO patient) {
         Patient patientEntity = patientMapper.toEntity(patient);
         Patient savedPatient = patientService.createPatient(patientEntity);
-        return "redirect:/patients/" + savedPatient.getId();
+        return "redirect:/";
+    }
+
+    /**
+     * Edit patient form
+     */
+    @GetMapping("/patients/{id}/edit")
+    public String editPatientForm(@PathVariable UUID id, Model model) {
+        Patient patient = patientService.get(id);
+        PatientDTO patientDTO = patientMapper.toDto(patient);
+        model.addAttribute("patient", patientDTO);
+        model.addAttribute("genders", Gender.values());
+        return "patients/edit";
+    }
+
+    /**
+     * Update patient
+     */
+    @PostMapping("/patients/{id}/edit")
+    public String updatePatient(@PathVariable UUID id, @ModelAttribute PatientDTO patient, RedirectAttributes redirectAttributes) {
+        patient.setId(id); // Ensure ID is set
+        Patient patientEntity = patientMapper.toEntity(patient);
+        patientService.updatePatient(id, patientEntity);
+        redirectAttributes.addFlashAttribute("success", "Patient updated successfully");
+        return "redirect:/patients/" + id;
+    }
+
+    /**
+     * Delete patient
+     */
+    @PostMapping("/patients/{id}/delete")
+    public String deletePatient(@PathVariable UUID id, RedirectAttributes redirectAttributes) {
+        patientService.deletePatient(id);
+        redirectAttributes.addFlashAttribute("success", "Patient deleted successfully");
+        return "redirect:/patients";
     }
 
     /**
@@ -148,9 +194,22 @@ public class WebController {
     @GetMapping("/patients/{patientId}/risk")
     public String riskAssessment(@PathVariable UUID patientId, 
                                 @RequestParam(required = false) Boolean analyze,
-                                Model model) {
+                                Model model,
+                                RedirectAttributes redirectAttributes) {
+        // Check if patient has enough readings for risk assessment
+        if (!readingService.hasAtLeastThreeReadings(patientId)) {
+            redirectAttributes.addFlashAttribute("error", "Patient needs at least 3 readings for risk assessment");
+            return "redirect:/patients/" + patientId;
+        }
+
         model.addAttribute("patient", patientService.get(patientId));
-        model.addAttribute("latestReading", readingService.getLatestReadingForPatient(patientId));
+
+        try {
+            model.addAttribute("latestReading", readingService.getLatestReadingForPatient(patientId));
+        } catch (EntityNotFoundException e) {
+            // If no readings found, set latestReading to null
+            model.addAttribute("latestReading", null);
+        }
 
         // Only perform AI analysis if explicitly requested
         if (Boolean.TRUE.equals(analyze)) {

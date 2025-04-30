@@ -22,7 +22,7 @@ public class Patient {
     private String kinName;
     private String kinTelNumber;
     private String knownConditions;
-    @Column(length = 2000)
+    @Column(columnDefinition = "TEXT")
     private String notes;
     private LocalDateTime registeredAt;
 

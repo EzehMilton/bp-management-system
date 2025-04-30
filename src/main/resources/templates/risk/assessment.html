@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"
       xmlns:th="http://www.thymeleaf.org"
-      th:replace="layout :: layout(~{::pageTitle}, ~{::content}, ~{::scripts})">
+      th:replace="~{layout :: layout(~{::pageTitle}, ~{::content}, ~{::scripts})}">
 
 <!-- 1) Page title fragment -->
 <th:block th:fragment="pageTitle">Risk Assessment</th:block>
@@ -62,12 +62,12 @@
                         <button type="submit" class="btn btn-warning">Capture & Assess Now</button>
                     </form>
 
-                    <div th:if="${immediateRisk}" class="alert alert-info mt-3">
+                    <div th:if="${immediateRisk != null}" class="alert alert-info mt-3">
                         <h5>Immediate Risk Assessment Result:</h5>
                         <p th:text="${immediateRisk}">Risk level</p>
                     </div>
 
-                    <div th:if="${immediateRiskError}" class="alert alert-danger mt-3">
+                    <div th:if="${immediateRiskError != null}" class="alert alert-danger mt-3">
                         <h5>Error:</h5>
                         <p th:text="${immediateRiskError}">Error message</p>
                     </div>
@@ -82,12 +82,12 @@
                     <h5 class="mb-0">AI-Powered Risk Analysis</h5>
                 </div>
                 <div class="card-body">
-                    <div th:if="${aiRiskError}" class="alert alert-danger">
+                    <div th:if="${aiRiskError != null}" class="alert alert-danger">
                         <h5>Error:</h5>
                         <p th:text="${aiRiskError}">Error message</p>
                     </div>
 
-                    <div th:if="${aiRisk}" class="card">
+                    <div th:if="${aiRisk != null}" class="card">
                         <div class="card-body">
                             <h5 class="card-title">AI Risk Assessment</h5>
 
@@ -103,15 +103,21 @@
                             <div th:if="${aiRisk == 'VERY_HIGH'}" class="alert alert-danger">
                                 <strong>Very High Risk</strong> – Immediate medical attention required.
                             </div>
-                            <div th:if="${!#strings.equals(aiRisk, 'LOW') && !#strings.equals(aiRisk, 'MODERATE') && !#strings.equals(aiRisk, 'HIGH') && !#strings.equals(aiRisk, 'VERY_HIGH')}">
+                            <div th:if="${aiRisk != null && !#strings.equals(aiRisk, 'LOW') && !#strings.equals(aiRisk, 'MODERATE') && !#strings.equals(aiRisk, 'HIGH') && !#strings.equals(aiRisk, 'VERY_HIGH')}">
                                 <p th:text="${aiRisk}">Risk assessment</p>
                             </div>
                         </div>
                     </div>
 
-                    <div th:unless="${aiRisk || aiRiskError}" class="text-center py-4">
+                    <div th:unless="${aiRisk != null || aiRiskError != null}" class="text-center py-4">
                         <p>Click the button below to analyze the patient's risk based on their blood pressure history.</p>
-                        <a th:href="@{/patients/{id}/risk(id=${patient.id}, analyze=true)}" class="btn btn-primary">Analyze with AI</a>
+                        <button id="analyzeButton" class="btn btn-primary" onclick="analyzeRisk()">Analyze with AI</button>
+                        <div id="loadingIndicator" style="display: none;" class="mt-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Please wait, analyzing...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -144,7 +150,42 @@
 
 <!-- 3) Page-specific scripts fragment -->
 <th:block th:fragment="scripts">
-    <!-- Risk assessment specific scripts can go here -->
+    <script th:inline="javascript">
+        function analyzeRisk() {
+            // Get patient ID from Thymeleaf
+            const patientId = /*[[${patient.id}]]*/ 'dummy-id';
+
+            // Show loading indicator and disable button
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('analyzeButton').disabled = true;
+
+            // Make AJAX request to the server
+            fetch(`/v1/api/risk/${patientId}/analyzeAI`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text();
+            })
+            .then(data => {
+                console.log('Analysis complete:', data);
+                // Reload the page with analyze=true parameter to show the results
+                window.location.href = `/patients/${patientId}/risk?analyze=true`;
+            })
+            .catch(error => {
+                console.error('Error during analysis:', error);
+                // Hide loading indicator and re-enable button
+                document.getElementById('loadingIndicator').style.display = 'none';
+                document.getElementById('analyzeButton').disabled = false;
+                alert('An error occurred during analysis. Please try again.');
+            });
+        }
+    </script>
 </th:block>
 
 </html>

@@ -114,4 +114,14 @@ public class ReadingService {
 
         return readingMapper.toDto(reading);
     }
+
+    /**
+     * Check if a patient has at least 3 readings
+     */
+    public boolean hasAtLeastThreeReadings(UUID patientId) {
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + patientId));
+
+        return readingRepository.countByPatient(patient) >= 3;
+    }
 }
