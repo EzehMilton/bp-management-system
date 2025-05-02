@@ -4,6 +4,7 @@ import com.chikere.bp.bptracker.exception.EntityNotFoundException;
 import com.chikere.bp.bptracker.model.Patient;
 import com.chikere.bp.bptracker.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,17 +12,28 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class PatientService {
     private final PatientRepository patientRepository;
 
     public Patient createPatient(Patient patient){
         // this should be used to create a new patient
-        return patientRepository.save(patient);
+        log.debug("Creating new patient: {}", patient);
+        Patient savedPatient = patientRepository.save(patient);
+        log.info("Patient created successfully with ID: {}", savedPatient.getId());
+        return savedPatient;
     }
 
     public Patient findById(UUID id){
         // this should be used to find a patient by their ID
-        return patientRepository.findById(id).orElse(null);
+        log.debug("Finding patient by ID: {}", id);
+        Patient patient = patientRepository.findById(id).orElse(null);
+        if (patient == null) {
+            log.debug("No patient found with ID: {}", id);
+        } else {
+            log.debug("Found patient with ID: {}", id);
+        }
+        return patient;
     }
 
     public List<Patient> search(String name) {
@@ -51,8 +63,16 @@ public class PatientService {
     }
 
     public Patient get(UUID id) {
-        return patientRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + id));
+        log.debug("Getting patient with ID: {}", id);
+        try {
+            Patient patient = patientRepository.findById(id)
+                    .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + id));
+            log.debug("Found patient with ID: {}", id);
+            return patient;
+        } catch (EntityNotFoundException e) {
+            log.error("Failed to find patient with ID: {}", id, e);
+            throw e;
+        }
     }
 
 }

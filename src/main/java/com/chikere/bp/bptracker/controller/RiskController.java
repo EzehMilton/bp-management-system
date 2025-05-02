@@ -3,6 +3,7 @@ package com.chikere.bp.bptracker.controller;
 import com.chikere.bp.bptracker.exception.EntityNotFoundException;
 import com.chikere.bp.bptracker.service.RiskService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +12,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/api/risk")
+@Slf4j
 public class RiskController {
     private final RiskService riskService;
 
@@ -26,10 +28,14 @@ public class RiskController {
     @PostMapping("/{patientId}/immediate")
     public ResponseEntity<String> captureAndAssessImmediateReading(
             @PathVariable UUID patientId) {
+        log.debug("REST request to capture and assess immediate reading for patient with ID: {}", patientId);
         try {
             String riskLevel = riskService.captureAndAssessImmediateReading(patientId);
+            log.info("Immediate risk assessment completed for patient with ID: {}, risk level: {}", 
+                    patientId, riskLevel != null ? riskLevel : "NORMAL");
             return ResponseEntity.ok(riskLevel != null ? riskLevel : "NORMAL");
         } catch (EntityNotFoundException e) {
+            log.error("Failed to assess immediate reading for patient with ID: {}", patientId, e);
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -45,11 +51,14 @@ public class RiskController {
      */
     @GetMapping("/{patientId}/analyzeAI")
     public ResponseEntity<String> riskCheckWithAi(@PathVariable UUID patientId) {
+        log.debug("REST request to perform AI-based risk analysis for patient with ID: {}", patientId);
         try {
             String riskLevelString = riskService.accessRiskWithAI(patientId);
             RiskService.RiskLevel level = RiskService.RiskLevel.valueOf(riskLevelString);
+            log.info("AI-based risk analysis completed for patient with ID: {}, risk level: {}", patientId, level.name());
             return ResponseEntity.ok(level.name());
         } catch (EntityNotFoundException e) {
+            log.error("Failed to perform AI-based risk analysis for patient with ID: {}", patientId, e);
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

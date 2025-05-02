@@ -59,8 +59,6 @@ public class RiskService {
      * Uses AI to assess patient risk based on their last 3 readings.
      */
     public String accessRiskWithAI(UUID patientId) {
-        // This will be a standalone call, that will have a button or link associated with it in the FrontEnd.
-        // It will be used weekly to assess the patients risk level.
         log.info("Fetching recent blood pressure readings for patient with ID: {}", patientId);
         String readingsSummary = fetchAndValidateRecentBPReadings(patientId);
         if (UNKNOWN.equals(readingsSummary)) {

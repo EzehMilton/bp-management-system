@@ -14,6 +14,7 @@ import com.chikere.bp.bptracker.service.PatientService;
 import com.chikere.bp.bptracker.service.ReadingService;
 import com.chikere.bp.bptracker.service.RiskService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,7 @@ import java.util.UUID;
  */
 @Controller
 @RequiredArgsConstructor
+@Slf4j
 public class WebController {
     private final PatientService patientService;
     private final ReadingService readingService;
@@ -86,8 +88,10 @@ public class WebController {
      */
     @PostMapping("/patients/new")
     public String createPatient(@ModelAttribute NewPatientDTO patient) {
+        log.debug("Web request to create new patient: {}", patient);
         Patient patientEntity = patientMapper.toEntity(patient);
         Patient savedPatient = patientService.createPatient(patientEntity);
+        log.info("Patient created successfully with ID: {}", savedPatient.getId());
         return "redirect:/";
     }
 
@@ -108,9 +112,11 @@ public class WebController {
      */
     @PostMapping("/patients/{id}/edit")
     public String updatePatient(@PathVariable UUID id, @ModelAttribute PatientDTO patient, RedirectAttributes redirectAttributes) {
+        log.debug("Web request to update patient with ID: {}, data: {}", id, patient);
         patient.setId(id); // Ensure ID is set
         Patient patientEntity = patientMapper.toEntity(patient);
         patientService.updatePatient(id, patientEntity);
+        log.info("Patient updated successfully with ID: {}", id);
         redirectAttributes.addFlashAttribute("success", "Patient updated successfully");
         return "redirect:/patients/" + id;
     }
@@ -120,7 +126,9 @@ public class WebController {
      */
     @PostMapping("/patients/{id}/delete")
     public String deletePatient(@PathVariable UUID id, RedirectAttributes redirectAttributes) {
+        log.debug("Web request to delete patient with ID: {}", id);
         patientService.deletePatient(id);
+        log.info("Patient deleted successfully with ID: {}", id);
         redirectAttributes.addFlashAttribute("success", "Patient deleted successfully");
         return "redirect:/patients";
     }
@@ -184,7 +192,10 @@ public class WebController {
      */
     @PostMapping("/readings/new")
     public String createReading(@ModelAttribute NewReadingDto reading) {
+        log.debug("Web request to create new reading: {}", reading);
         ReadingDto savedReading = readingService.create(reading);
+        log.info("Reading created successfully with ID: {} for patient ID: {}", 
+                savedReading.getId(), reading.getPatientId());
         return "redirect:/readings/" + savedReading.getId();
     }
 
@@ -196,8 +207,11 @@ public class WebController {
                                 @RequestParam(required = false) Boolean analyze,
                                 Model model,
                                 RedirectAttributes redirectAttributes) {
+        log.debug("Web request for risk assessment for patient with ID: {}, analyze: {}", patientId, analyze);
+
         // Check if patient has enough readings for risk assessment
         if (!readingService.hasAtLeastThreeReadings(patientId)) {
+            log.warn("Patient with ID: {} does not have enough readings for risk assessment", patientId);
             redirectAttributes.addFlashAttribute("error", "Patient needs at least 3 readings for risk assessment");
             return "redirect:/patients/" + patientId;
         }
@@ -208,15 +222,19 @@ public class WebController {
             model.addAttribute("latestReading", readingService.getLatestReadingForPatient(patientId));
         } catch (EntityNotFoundException e) {
             // If no readings found, set latestReading to null
+            log.warn("No readings found for patient with ID: {}", patientId);
             model.addAttribute("latestReading", null);
         }
 
         // Only perform AI analysis if explicitly requested
         if (Boolean.TRUE.equals(analyze)) {
+            log.info("Performing AI risk analysis for patient with ID: {}", patientId);
             try {
                 String aiRisk = riskService.accessRiskWithAI(patientId);
+                log.info("AI risk analysis completed for patient with ID: {}, risk level: {}", patientId, aiRisk);
                 model.addAttribute("aiRisk", aiRisk);
             } catch (Exception e) {
+                log.error("Error performing AI risk analysis for patient with ID: {}", patientId, e);
                 model.addAttribute("aiRiskError", e.getMessage());
             }
         }
@@ -229,10 +247,14 @@ public class WebController {
      */
     @PostMapping("/patients/{patientId}/risk/immediate")
     public String captureAndAssessImmediateReading(@PathVariable UUID patientId, Model model) {
+        log.debug("Web request to capture and assess immediate reading for patient with ID: {}", patientId);
         try {
             String riskLevel = riskService.captureAndAssessImmediateReading(patientId);
+            log.info("Immediate risk assessment completed for patient with ID: {}, risk level: {}", 
+                    patientId, riskLevel != null ? riskLevel : "NORMAL");
             model.addAttribute("immediateRisk", riskLevel != null ? riskLevel : "NORMAL");
         } catch (Exception e) {
+            log.error("Error assessing immediate reading for patient with ID: {}", patientId, e);
             model.addAttribute("immediateRiskError", e.getMessage());
         }
         return "redirect:/patients/" + patientId + "/risk";
