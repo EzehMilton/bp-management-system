@@ -20,9 +20,11 @@ import java.util.stream.Collectors;
 public class RiskService {
 
     public enum RiskLevel {
+        LOW,
         NORMAL,
-        AT_RISK,
-        CRITICAL
+        MILD_HYPERTENSIVE,
+        MODERATE_HYPERTENSIVE,
+        SEVERE_HYPERTENSIVE
     }
 
     private final PatientRepository patientRepository;
@@ -43,15 +45,26 @@ public class RiskService {
         int systolic = latestReading.getSystolic();
         int diastolic = latestReading.getDiastolic();
 
-        if (systolic >= 180 || diastolic >= 120) {
-            log.info("Critical BP Levels for: {} , reading taken: {}", patient, latestReading.getTimestamp());
-            return RiskLevel.CRITICAL.name();
+        RiskLevel riskLevel;
+
+        if (systolic >= 180 || diastolic >= 110) {
+            log.info("Severe Hypertensive BP Levels for: {} , reading taken: {}", patient, latestReading.getTimestamp());
+            riskLevel = RiskLevel.SEVERE_HYPERTENSIVE;
+        } else if (systolic >= 160 || diastolic >= 100) {
+            log.info("Moderate Hypertensive BP Levels for: {} , reading taken: {}", patient, latestReading.getTimestamp());
+            riskLevel = RiskLevel.MODERATE_HYPERTENSIVE;
+        } else if (systolic >= 140 || diastolic >= 90) {
+            log.info("Mild Hypertensive BP Levels for: {} , reading taken: {}", patient, latestReading.getTimestamp());
+            riskLevel = RiskLevel.MILD_HYPERTENSIVE;
+        } else if (systolic >= 80 && diastolic >= 80) {
+            log.info("Normal BP Levels for: {} , reading taken: {}", patient, latestReading.getTimestamp());
+            riskLevel = RiskLevel.NORMAL;
+        } else {
+            log.info("Low BP Levels for: {} , reading taken: {}", patient, latestReading.getTimestamp());
+            riskLevel = RiskLevel.LOW;
         }
-        if (systolic >= 140 || diastolic >= 90) {
-            log.info("At Risk BP Levels for: {} , reading taken: {}", patient, latestReading.getTimestamp());
-            return RiskLevel.AT_RISK.name();
-        }
-        return RiskLevel.NORMAL.name();
+
+        return riskLevel.name();
     }
 
 
@@ -139,14 +152,18 @@ public class RiskService {
             Based on these 3 recent blood pressure readings (systolic/diastolic):
             %s
 
-            Please assess the patient's risk level and respond with one of the following options in CAPITAL LETTERS: NORMAL, AT_RISK, or CRITICAL.
+            Please assess the patient's risk level and respond with one of the following options in CAPITAL LETTERS: 
+            LOW, NORMAL, MILD_HYPERTENSIVE, MODERATE_HYPERTENSIVE, or SEVERE_HYPERTENSIVE.
 
             First, explain your reasoning based on the readings.
-            Then, clearly state the risk level on a new line, as one of the three options (NORMAL, AT_RISK, or CRITICAL).
+            Then, clearly state the risk level on a new line, as one of the five options.
 
-            Normal blood pressure is around 120/80 mmHg.
-            Readings consistently higher than 130/80 may indicate AT_RISK.
-            Readings significantly above 140/90 or very low may indicate CRITICAL.
+            Blood pressure classification:
+            - 80/80 and below: LOW
+            - 80-140/80-90: NORMAL
+            - 140-160/90-100: MILD_HYPERTENSIVE
+            - 160-180/100-110: MODERATE_HYPERTENSIVE
+            - 180/110 and above: SEVERE_HYPERTENSIVE
             """.formatted(readingsSummary);
     }
 }

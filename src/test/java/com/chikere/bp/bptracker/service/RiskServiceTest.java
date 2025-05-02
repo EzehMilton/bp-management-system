@@ -72,7 +72,7 @@ class RiskServiceTest {
     }
 
     @Test
-    void returnsAtRiskWhenBloodPressureIsHigh() {
+    void returnsMildHypertensiveWhenBloodPressureIsHigh() {
         when(patientRepository.findById(patientId)).thenReturn(Optional.of(patient));
 
         Reading reading = new Reading();
@@ -84,7 +84,7 @@ class RiskServiceTest {
 
         String result = riskService.captureAndAssessImmediateReading(patientId);
 
-        assertEquals("AT_RISK", result);
+        assertEquals("MILD_HYPERTENSIVE", result);
         verify(patientRepository, times(1)).findById(patientId);
         verify(readingRepository, times(1)).findFirstByPatientOrderByTimestampDesc(patient);
     }
@@ -108,7 +108,7 @@ class RiskServiceTest {
     }
 
     @Test
-    void returnsCriticalWhenBloodPressureIsVeryHigh() {
+    void returnsSevereHypertensiveWhenBloodPressureIsVeryHigh() {
         when(patientRepository.findById(patientId)).thenReturn(Optional.of(patient));
 
         Reading reading = new Reading();
@@ -120,7 +120,7 @@ class RiskServiceTest {
 
         String result = riskService.captureAndAssessImmediateReading(patientId);
 
-        assertEquals("CRITICAL", result);
+        assertEquals("SEVERE_HYPERTENSIVE", result);
         verify(patientRepository, times(1)).findById(patientId);
         verify(readingRepository, times(1)).findFirstByPatientOrderByTimestampDesc(patient);
     }
