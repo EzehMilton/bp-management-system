@@ -11,6 +11,7 @@ import com.chikere.bp.bptracker.repository.ReadingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -123,5 +124,83 @@ public class ReadingService {
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + patientId));
 
         return readingRepository.countByPatient(patient) >= 3;
+    }
+
+    /**
+     * Get all readings for a patient as CSV
+     */
+    public String getAllReadingsForPatientAsCsv(UUID patientId) {
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + patientId));
+
+        List<Reading> readings = readingRepository.findAllByPatientOrderByTimestampDesc(patient);
+
+        if (readings.isEmpty()) {
+            throw new EntityNotFoundException("No readings found for patient with ID: " + patientId);
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        StringBuilder csv = new StringBuilder();
+        // Add CSV header
+        csv.append("Date,Time,Systolic,Diastolic,Heart Rate,Body Position,Arm,Notes,Device ID\n");
+
+        // Add readings data
+        for (Reading reading : readings) {
+            csv.append(reading.getTimestamp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))).append(",");
+            csv.append(reading.getTimestamp().format(DateTimeFormatter.ofPattern("HH:mm:ss"))).append(",");
+            csv.append(reading.getSystolic()).append(",");
+            csv.append(reading.getDiastolic()).append(",");
+            csv.append(reading.getHeartRate()).append(",");
+            csv.append(reading.getBodyPosition()).append(",");
+            csv.append(reading.getArm()).append(",");
+            csv.append(reading.getNotes() != null ? "\"" + reading.getNotes().replace("\"", "\"\"") + "\"" : "").append(",");
+            csv.append(reading.getDeviceId() != null ? reading.getDeviceId() : "").append("\n");
+        }
+
+        return csv.toString();
+    }
+
+    /**
+     * Check if a patient has any readings
+     */
+    public boolean hasReadings(UUID patientId) {
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + patientId));
+
+        return readingRepository.countByPatient(patient) > 0;
+    }
+
+    /**
+     * Get all readings as CSV, including patient information
+     */
+    public String getAllReadingsAsCsv() {
+        List<Reading> readings = readingRepository.findAll();
+
+        if (readings.isEmpty()) {
+            throw new EntityNotFoundException("No readings found");
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+        StringBuilder csv = new StringBuilder();
+        // Add CSV header with patient information
+        csv.append("Date,Time,Patient Name,Systolic,Diastolic,Heart Rate,Body Position,Arm,Notes,Device ID\n");
+
+        // Add readings data
+        for (Reading reading : readings) {
+            csv.append(reading.getTimestamp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))).append(",");
+            csv.append(reading.getTimestamp().format(DateTimeFormatter.ofPattern("HH:mm:ss"))).append(",");
+            csv.append("\"").append(reading.getPatient().getFullName().replace("\"", "\"\"")).append("\"").append(",");
+            csv.append(reading.getSystolic()).append(",");
+            csv.append(reading.getDiastolic()).append(",");
+            csv.append(reading.getHeartRate()).append(",");
+            csv.append(reading.getBodyPosition()).append(",");
+            csv.append(reading.getArm()).append(",");
+            csv.append(reading.getNotes() != null ? "\"" + reading.getNotes().replace("\"", "\"\"") + "\"" : "").append(",");
+            csv.append(reading.getDeviceId() != null ? reading.getDeviceId() : "").append("\n");
+        }
+
+        return csv.toString();
     }
 }

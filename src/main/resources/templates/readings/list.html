@@ -14,6 +14,7 @@
         </div>
         <div class="col-md-6 text-end">
             <a href="/readings/new" class="btn btn-primary">Add New Reading</a>
+            <a th:unless="${#lists.isEmpty(readings)}" href="/readings/download-csv" class="btn btn-success ms-2">Download CSV</a>
         </div>
     </div>
 

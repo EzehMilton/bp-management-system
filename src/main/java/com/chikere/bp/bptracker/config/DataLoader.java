@@ -40,8 +40,6 @@ public class DataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // clear existing (optional)
-        // patientRepository.deleteAll();
 
         // seed 5 patients
         if (patientRepository.count() == 0) {

@@ -15,6 +15,9 @@ import com.chikere.bp.bptracker.service.ReadingService;
 import com.chikere.bp.bptracker.service.RiskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -69,6 +72,9 @@ public class WebController {
 
         // Check if patient has at least 3 readings for risk assessment
         model.addAttribute("hasEnoughReadingsForRisk", readingService.hasAtLeastThreeReadings(id));
+
+        // Check if patient has any readings for CSV download button
+        model.addAttribute("hasReadings", readingService.hasReadings(id));
 
         return "patients/view";
     }
@@ -258,5 +264,28 @@ public class WebController {
             model.addAttribute("immediateRiskError", e.getMessage());
         }
         return "redirect:/patients/" + patientId + "/risk";
+    }
+
+    /**
+     * Download all readings as CSV
+     */
+    @GetMapping("/readings/download-csv")
+    public ResponseEntity<String> downloadAllReadingsAsCsv() {
+        log.debug("Web request to download all readings as CSV");
+        try {
+            String csvContent = readingService.getAllReadingsAsCsv();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("text/csv"));
+            headers.setContentDispositionFormData("attachment", "all_readings.csv");
+
+            log.info("Generated CSV for all readings");
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(csvContent);
+        } catch (EntityNotFoundException e) {
+            log.warn("No readings found for CSV download");
+            return ResponseEntity.noContent().build();
+        }
     }
 }
