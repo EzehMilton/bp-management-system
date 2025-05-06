@@ -288,4 +288,27 @@ public class WebController {
             return ResponseEntity.noContent().build();
         }
     }
+
+    /**
+     * API endpoint for AI risk analysis
+     */
+    @GetMapping("/v1/api/risk/{patientId}/analyzeAI")
+    @ResponseBody
+    public ResponseEntity<String> analyzeRiskWithAI(@PathVariable UUID patientId) {
+        log.debug("API request to analyze risk with AI for patient with ID: {}", patientId);
+        try {
+            // Check if patient has enough readings for risk assessment
+            if (!readingService.hasAtLeastThreeReadings(patientId)) {
+                log.warn("Patient with ID: {} does not have enough readings for risk assessment", patientId);
+                return ResponseEntity.badRequest().body("Patient needs at least 3 readings for risk assessment");
+            }
+
+            String aiRisk = riskService.accessRiskWithAI(patientId);
+            log.info("AI risk analysis completed for patient with ID: {}, risk level: {}", patientId, aiRisk);
+            return ResponseEntity.ok(aiRisk);
+        } catch (Exception e) {
+            log.error("Error performing AI risk analysis for patient with ID: {}", patientId, e);
+            return ResponseEntity.status(500).body("Error performing AI risk analysis: " + e.getMessage());
+        }
+    }
 }

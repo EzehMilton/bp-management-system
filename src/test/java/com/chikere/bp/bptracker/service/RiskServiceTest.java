@@ -1,145 +1,88 @@
 package com.chikere.bp.bptracker.service;
 
-import com.chikere.bp.bptracker.exception.EntityNotFoundException;
-import com.chikere.bp.bptracker.model.Patient;
-import com.chikere.bp.bptracker.model.Reading;
-import com.chikere.bp.bptracker.repository.PatientRepository;
-import com.chikere.bp.bptracker.repository.ReadingRepository;
-import com.chikere.bp.bptracker.service.RiskService;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
+/**
+ * Tests for the RiskService facade.
+ * This class tests that RiskService properly delegates to the specialized services.
+ */
+@ExtendWith(MockitoExtension.class)
 class RiskServiceTest {
 
-    @Mock
-    private PatientRepository patientRepository;
-
-    @Mock
-    private ReadingRepository readingRepository;
-
-    @InjectMocks
+    private RuleBasedRiskService ruleBasedRiskService;
+    private AIRiskAssessmentService aiRiskAssessmentService;
+    private Timer ruleBasedRiskAssessmentTimer;
+    private Timer aiRiskAssessmentTimer;
+    private Counter riskLevelCounter;
+    private MeterRegistry meterRegistry;
     private RiskService riskService;
-
     private UUID patientId;
-    private Patient patient;
-    private List<Reading> readings;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        patientId = UUID.randomUUID();
-        patient = new Patient();
-        patient.setId(patientId);
-        patient.setFullName("John Doe");
+        ruleBasedRiskService = mock(RuleBasedRiskService.class);
+        aiRiskAssessmentService = mock(AIRiskAssessmentService.class);
+        ruleBasedRiskAssessmentTimer = mock(Timer.class);
+        aiRiskAssessmentTimer = mock(Timer.class);
+        riskLevelCounter = mock(Counter.class);
+        meterRegistry = mock(MeterRegistry.class);
 
-        readings = List.of(
-                createReading(120, 80, "2023-10-01T10:00:00"),
-                createReading(130, 85, "2023-10-02T10:00:00"),
-                createReading(140, 90, "2023-10-03T10:00:00")
+        // Setup timer to return the value passed to it
+        when(ruleBasedRiskAssessmentTimer.record(any(Supplier.class))).thenAnswer(invocation -> {
+            return ((Supplier<String>) invocation.getArgument(0)).get();
+        });
+        when(aiRiskAssessmentTimer.record(any(Supplier.class))).thenAnswer(invocation -> {
+            return ((Supplier<String>) invocation.getArgument(0)).get();
+        });
+
+        riskService = new RiskService(
+            ruleBasedRiskService, 
+            aiRiskAssessmentService,
+            ruleBasedRiskAssessmentTimer,
+            aiRiskAssessmentTimer,
+            riskLevelCounter,
+            meterRegistry
         );
+        patientId = UUID.randomUUID();
     }
 
     @Test
-    void returnsUnknownWhenNotEnoughReadings() {
-        when(patientRepository.findById(patientId)).thenReturn(Optional.of(patient));
-        when(readingRepository.findTop3ByPatientOrderByTimestampDesc(patient)).thenReturn(List.of());
+    void delegatesCaptureAndAssessImmediateReadingToRuleBasedService() {
+        // Arrange
+        when(ruleBasedRiskService.captureAndAssessImmediateReading(patientId)).thenReturn("NORMAL");
 
+        // Act
+        String result = riskService.captureAndAssessImmediateReading(patientId);
+
+        // Assert
+        assertEquals("NORMAL", result);
+        verify(ruleBasedRiskService, times(1)).captureAndAssessImmediateReading(patientId);
+        verifyNoInteractions(aiRiskAssessmentService);
+    }
+
+    @Test
+    void delegatesAccessRiskWithAIToAIService() {
+        // Arrange
+        when(aiRiskAssessmentService.assessRiskWithAI(patientId)).thenReturn("MILD_HYPERTENSIVE");
+
+        // Act
         String result = riskService.accessRiskWithAI(patientId);
 
-        assertEquals("UNKNOWN", result);
-        verify(patientRepository, times(1)).findById(patientId);
-        verify(readingRepository, times(1)).findTop3ByPatientOrderByTimestampDesc(patient);
-    }
-
-    @Test
-    void throwsExceptionWhenPatientNotFound() {
-        when(patientRepository.findById(patientId)).thenReturn(Optional.empty());
-
-        assertThrows(EntityNotFoundException.class, () -> riskService.accessRiskWithAI(patientId));
-        verify(patientRepository, times(1)).findById(patientId);
-        verifyNoInteractions(readingRepository);
-    }
-
-    @Test
-    void returnsMildHypertensiveWhenBloodPressureIsHigh() {
-        when(patientRepository.findById(patientId)).thenReturn(Optional.of(patient));
-
-        Reading reading = new Reading();
-        reading.setSystolic(150);
-        reading.setDiastolic(95);
-        reading.setTimestamp(LocalDateTime.now());
-
-        when(readingRepository.findFirstByPatientOrderByTimestampDesc(patient)).thenReturn(Optional.of(reading));
-
-        String result = riskService.captureAndAssessImmediateReading(patientId);
-
+        // Assert
         assertEquals("MILD_HYPERTENSIVE", result);
-        verify(patientRepository, times(1)).findById(patientId);
-        verify(readingRepository, times(1)).findFirstByPatientOrderByTimestampDesc(patient);
-    }
-
-    @Test
-    void returnsNormalWhenBloodPressureIsNormal() {
-        when(patientRepository.findById(patientId)).thenReturn(Optional.of(patient));
-
-        Reading reading = new Reading();
-        reading.setSystolic(120);
-        reading.setDiastolic(80);
-        reading.setTimestamp(LocalDateTime.now());
-
-        when(readingRepository.findFirstByPatientOrderByTimestampDesc(patient)).thenReturn(Optional.of(reading));
-
-        String result = riskService.captureAndAssessImmediateReading(patientId);
-
-        assertEquals("NORMAL", result);
-        verify(patientRepository, times(1)).findById(patientId);
-        verify(readingRepository, times(1)).findFirstByPatientOrderByTimestampDesc(patient);
-    }
-
-    @Test
-    void returnsSevereHypertensiveWhenBloodPressureIsVeryHigh() {
-        when(patientRepository.findById(patientId)).thenReturn(Optional.of(patient));
-
-        Reading reading = new Reading();
-        reading.setSystolic(190);
-        reading.setDiastolic(125);
-        reading.setTimestamp(LocalDateTime.now());
-
-        when(readingRepository.findFirstByPatientOrderByTimestampDesc(patient)).thenReturn(Optional.of(reading));
-
-        String result = riskService.captureAndAssessImmediateReading(patientId);
-
-        assertEquals("SEVERE_HYPERTENSIVE", result);
-        verify(patientRepository, times(1)).findById(patientId);
-        verify(readingRepository, times(1)).findFirstByPatientOrderByTimestampDesc(patient);
-    }
-
-    @Test
-    void throwsExceptionWhenNoReadingsFound() {
-        when(patientRepository.findById(patientId)).thenReturn(Optional.of(patient));
-        when(readingRepository.findFirstByPatientOrderByTimestampDesc(patient)).thenReturn(Optional.empty());
-
-        assertThrows(EntityNotFoundException.class, () -> riskService.captureAndAssessImmediateReading(patientId));
-        verify(patientRepository, times(1)).findById(patientId);
-        verify(readingRepository, times(1)).findFirstByPatientOrderByTimestampDesc(patient);
-    }
-
-    private Reading createReading(int systolic, int diastolic, String timestamp) {
-        Reading reading = new Reading();
-        reading.setSystolic(systolic);
-        reading.setDiastolic(diastolic);
-        reading.setTimestamp(LocalDateTime.parse(timestamp));
-        return reading;
+        verify(aiRiskAssessmentService, times(1)).assessRiskWithAI(patientId);
+        verifyNoInteractions(ruleBasedRiskService);
     }
 }
