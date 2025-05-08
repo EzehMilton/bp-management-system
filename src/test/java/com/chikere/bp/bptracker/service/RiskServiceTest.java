@@ -23,10 +23,6 @@ class RiskServiceTest {
 
     private RuleBasedRiskService ruleBasedRiskService;
     private AIRiskAssessmentService aiRiskAssessmentService;
-    private Timer ruleBasedRiskAssessmentTimer;
-    private Timer aiRiskAssessmentTimer;
-    private Counter riskLevelCounter;
-    private MeterRegistry meterRegistry;
     private RiskService riskService;
     private UUID patientId;
 
@@ -34,10 +30,10 @@ class RiskServiceTest {
     void setUp() {
         ruleBasedRiskService = mock(RuleBasedRiskService.class);
         aiRiskAssessmentService = mock(AIRiskAssessmentService.class);
-        ruleBasedRiskAssessmentTimer = mock(Timer.class);
-        aiRiskAssessmentTimer = mock(Timer.class);
-        riskLevelCounter = mock(Counter.class);
-        meterRegistry = mock(MeterRegistry.class);
+        Timer ruleBasedRiskAssessmentTimer = mock(Timer.class);
+        Timer aiRiskAssessmentTimer = mock(Timer.class);
+        Counter riskLevelCounter = mock(Counter.class);
+        MeterRegistry meterRegistry = mock(MeterRegistry.class);
 
         // Setup timer to return the value passed to it
         when(ruleBasedRiskAssessmentTimer.record(any(Supplier.class))).thenAnswer(invocation -> {
@@ -50,10 +46,10 @@ class RiskServiceTest {
         riskService = new RiskService(
             ruleBasedRiskService, 
             aiRiskAssessmentService,
-            ruleBasedRiskAssessmentTimer,
-            aiRiskAssessmentTimer,
-            riskLevelCounter,
-            meterRegistry
+                ruleBasedRiskAssessmentTimer,
+                aiRiskAssessmentTimer,
+                riskLevelCounter,
+                meterRegistry
         );
         patientId = UUID.randomUUID();
     }
