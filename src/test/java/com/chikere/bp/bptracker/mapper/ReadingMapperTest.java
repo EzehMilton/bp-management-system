@@ -17,7 +17,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ReadingMapperTest {
+class ReadingMapperTest {
 
     private final ReadingMapper readingMapper = Mappers.getMapper(ReadingMapper.class);
     

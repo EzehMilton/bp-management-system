@@ -14,7 +14,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-public class PatientRepositoryTest {
+class PatientRepositoryTest {
 
     @Autowired
     private TestEntityManager entityManager;
@@ -52,10 +52,6 @@ public class PatientRepositoryTest {
         List<Patient> results2 = patientRepository.findByFullNameContainingIgnoreCase("john");
         assertEquals(1, results2.size());
         assertEquals("John Doe", results2.getFirst().getFullName());
-
-        // Test with partial match for both patients
-//        List<Patient> results3 = patientRepository.findByFullNameContainingIgnoreCase("o");
-//        assertEquals(1, results3.size());
 
         // Test with another partial match for both patients
         List<Patient> results3b = patientRepository.findByFullNameContainingIgnoreCase("e");

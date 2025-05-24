@@ -1,7 +1,5 @@
 package com.chikere.bp.bptracker.integration;
 
-import com.chikere.bp.bptracker.dto.NewPatientDTO;
-import com.chikere.bp.bptracker.dto.NewReadingDto;
 import com.chikere.bp.bptracker.model.Patient;
 import com.chikere.bp.bptracker.model.Reading;
 import com.chikere.bp.bptracker.model.enums.Arm;
@@ -22,7 +20,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.List;
-import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-public class WebControllerIntegrationTest {
+class WebControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

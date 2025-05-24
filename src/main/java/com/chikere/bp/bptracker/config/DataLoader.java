@@ -4,6 +4,7 @@ import com.chikere.bp.bptracker.model.Patient;
 import com.chikere.bp.bptracker.model.enums.Gender;
 import com.chikere.bp.bptracker.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,7 @@ import java.time.LocalDate;
 @Component
 @Profile({"dev", "test"})
 @RequiredArgsConstructor
+@Slf4j
 public class DataLoader implements CommandLineRunner {
 
     private final PatientRepository patientRepository;
@@ -43,7 +45,7 @@ public class DataLoader implements CommandLineRunner {
 
         // seed 5 patients
         if (patientRepository.count() == 0) {
-            System.out.println("Seeding database with sample patient data...");
+            log.info("Seeding database with sample patient data...");
             patientRepository.save(create("Angelina Ezeh",   Gender.FEMALE,  LocalDate.of(2009, 10, 15),
                     "0712345678","Village A","0712300000","None"));
             patientRepository.save(create("Micheal Ezeh",   Gender.MALE,    LocalDate.of(1997, 8,  4),

@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Service
 public class ReadingService {
+    public static final String PATIENT_NOT_FOUND_WITH_ID = "Patient not found with ID: ";
     private final ReadingRepository readingRepository;
     private final PatientRepository patientRepository;
     private final ReadingMapper readingMapper;
@@ -29,7 +30,7 @@ public class ReadingService {
     public ReadingDto create(NewReadingDto newReadingDto) {
         // Find the patient
         Patient patient = patientRepository.findById(newReadingDto.getPatientId())
-                .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + newReadingDto.getPatientId()));
+                .orElseThrow(() -> new EntityNotFoundException(PATIENT_NOT_FOUND_WITH_ID + newReadingDto.getPatientId()));
 
         // Convert DTO to entity and set patient
         Reading reading = readingMapper.toEntity(newReadingDto);
@@ -55,7 +56,7 @@ public class ReadingService {
 
         // Find patient and set it
         Patient patient = patientRepository.findById(readingDto.getPatientId())
-                .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + readingDto.getPatientId()));
+                .orElseThrow(() -> new EntityNotFoundException(PATIENT_NOT_FOUND_WITH_ID + readingDto.getPatientId()));
         reading.setPatient(patient);
 
         // Save and return as DTO
@@ -96,7 +97,7 @@ public class ReadingService {
      */
     public List<ReadingDto> getRecentReadingsForPatient(UUID patientId) {
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + patientId));
+                .orElseThrow(() -> new EntityNotFoundException(PATIENT_NOT_FOUND_WITH_ID + patientId));
 
         return readingRepository.findTop3ByPatientOrderByTimestampDesc(patient).stream()
                 .map(readingMapper::toDto)
@@ -108,7 +109,7 @@ public class ReadingService {
      */
     public ReadingDto getLatestReadingForPatient(UUID patientId) {
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + patientId));
+                .orElseThrow(() -> new EntityNotFoundException(PATIENT_NOT_FOUND_WITH_ID + patientId));
 
         Reading reading = readingRepository.findFirstByPatientOrderByTimestampDesc(patient)
                 .orElseThrow(() -> new EntityNotFoundException("No readings found for patient with ID: " + patientId));
@@ -121,7 +122,7 @@ public class ReadingService {
      */
     public boolean hasAtLeastThreeReadings(UUID patientId) {
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + patientId));
+                .orElseThrow(() -> new EntityNotFoundException(PATIENT_NOT_FOUND_WITH_ID + patientId));
 
         return readingRepository.countByPatient(patient) >= 3;
     }
@@ -131,15 +132,13 @@ public class ReadingService {
      */
     public String getAllReadingsForPatientAsCsv(UUID patientId) {
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + patientId));
+                .orElseThrow(() -> new EntityNotFoundException(PATIENT_NOT_FOUND_WITH_ID + patientId));
 
         List<Reading> readings = readingRepository.findAllByPatientOrderByTimestampDesc(patient);
 
         if (readings.isEmpty()) {
             throw new EntityNotFoundException("No readings found for patient with ID: " + patientId);
         }
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         StringBuilder csv = new StringBuilder();
         // Add CSV header
@@ -166,7 +165,7 @@ public class ReadingService {
      */
     public boolean hasReadings(UUID patientId) {
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new EntityNotFoundException("Patient not found with ID: " + patientId));
+                .orElseThrow(() -> new EntityNotFoundException(PATIENT_NOT_FOUND_WITH_ID + patientId));
 
         return readingRepository.countByPatient(patient) > 0;
     }
@@ -180,8 +179,6 @@ public class ReadingService {
         if (readings.isEmpty()) {
             throw new EntityNotFoundException("No readings found");
         }
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
         StringBuilder csv = new StringBuilder();
         // Add CSV header with patient information

@@ -13,7 +13,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class PatientMapperTest {
+class PatientMapperTest {
 
     private final PatientMapper patientMapper = Mappers.getMapper(PatientMapper.class);
 

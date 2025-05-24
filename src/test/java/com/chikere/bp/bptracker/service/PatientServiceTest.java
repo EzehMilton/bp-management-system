@@ -2,7 +2,6 @@ package com.chikere.bp.bptracker.service;
 
 import com.chikere.bp.bptracker.model.Patient;
 import com.chikere.bp.bptracker.repository.PatientRepository;
-import com.chikere.bp.bptracker.service.PatientService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;

@@ -12,13 +12,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -28,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-public class ApiIntegrationTest {
+class ApiIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -62,32 +60,6 @@ public class ApiIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(containsString("Patient needs at least 3 readings")));
     }
-
-    // This test is skipped because it requires a valid OpenAI API key
-    // In a real environment, this test would verify that the risk assessment API
-    // returns a valid risk level when the patient has enough readings
-    /*
-    @Test
-    void shouldReturnRiskAssessmentWhenEnoughReadings() throws Exception {
-        // Create 3 readings for the patient
-        for (int i = 0; i < 3; i++) {
-            Reading reading = new Reading();
-            reading.setPatient(testPatient);
-            reading.setSystolic(120 + i * 10); // 120, 130, 140
-            reading.setDiastolic(80 + i * 5);  // 80, 85, 90
-            reading.setHeartRate(72);
-            reading.setArm(Arm.LEFT);
-            reading.setBodyPosition(BodyPosition.SITTING);
-            reading.setTimestamp(LocalDateTime.now().minusDays(i));
-            readingRepository.save(reading);
-        }
-
-        // Test API endpoint for risk analysis with enough readings
-        mockMvc.perform(get("/v1/api/risk/{patientId}/analyzeAI", testPatient.getId()))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("NORMAL")));
-    }
-    */
 
     @Test
     void shouldDownloadReadingsAsCsv() throws Exception {

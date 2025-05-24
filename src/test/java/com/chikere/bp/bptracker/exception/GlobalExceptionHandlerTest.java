@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class GlobalExceptionHandlerTest {
+class GlobalExceptionHandlerTest {
 
     private GlobalExceptionHandler globalExceptionHandler;
 
