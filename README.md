@@ -10,6 +10,7 @@ The Blood Pressure Tracker is a comprehensive application designed to help patie
 - Recording and tracking blood pressure readings
 - Assessing health risks based on blood pressure data
 - AI-powered analysis of blood pressure trends
+- AI assistant for health-related questions
 
 ## Technologies Used
 
