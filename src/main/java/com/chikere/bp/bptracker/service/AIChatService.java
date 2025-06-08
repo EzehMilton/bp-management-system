@@ -1,5 +1,6 @@
 package com.chikere.bp.bptracker.service;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,9 @@ import jakarta.annotation.PostConstruct;
 @RequiredArgsConstructor
 @Slf4j
 public class AIChatService {
+
+    private static final String CIRCUIT_BREAKER_NAME = "AIBreaker";
+    private static final String DEFAULT_ERROR_MESSAGE = "I'm sorry, I couldn't process your question at the moment. Please try again later.";
 
     private final ChatClient chatClient;
     private final MeterRegistry meterRegistry;
@@ -39,24 +43,30 @@ public class AIChatService {
      * @param question The user's question
      * @return The AI's response
      */
+    @CircuitBreaker(name = CIRCUIT_BREAKER_NAME, fallbackMethod = "fallbackProcessQuestion")
     public String processQuestion(String question) {
         log.info("Processing user question: {}", question);
 
-        try {
-            // Send question to LLM via Spring AI
-            String response = chatClient.prompt(question).call().content();
+        // Send question to LLM via Spring AI
+        String response = chatClient.prompt(question).call().content();
 
-            // Increment success counter
-            aiChatSuccessCounter.increment();
+        // Increment success counter
+        aiChatSuccessCounter.increment();
 
-            log.debug("AI response: {}", response);
-            return response;
-        } catch (Exception e) {
-            // Increment failure counter
-            aiChatFailureCounter.increment();
+        log.debug("AI response: {}", response);
+        return response;
+    }
 
-            log.error("Error calling AI service: {}", e.getMessage(), e);
-            return "I'm sorry, I couldn't process your question at the moment. Please try again later.";
-        }
+    /**
+     * Fallback method for the circuit breaker.
+     * 
+     * @param question The original question
+     * @param throwable The exception that triggered the fallback
+     * @return A fallback response
+     */
+    public String fallbackProcessQuestion(String question, Throwable throwable) {
+        aiChatFailureCounter.increment();
+        log.error("Circuit breaker triggered for question: {}. Error: {}", question, throwable.getMessage(), throwable);
+        return DEFAULT_ERROR_MESSAGE;
     }
 }
